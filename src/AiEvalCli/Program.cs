@@ -1,0 +1,191 @@
+using System.Text.Json;
+using System.Text.Json.Serialization;
+using AiEvalCli;
+using AiEvalCli.Engine;
+
+// ---- Usage ----
+if (args.Length == 0 || args.Contains("--help") || args.Contains("-h"))
+{
+    PrintHelp();
+    return 0;
+}
+
+var cli = Args.Parse(args);
+
+if (cli.ShowHelp) { PrintHelp(); return 0; }
+
+// Validate evaluators
+var validEvaluators = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+    { "relevance", "coherence", "fluency", "groundedness", "completeness", "equivalence" };
+foreach (var name in cli.Evaluators)
+{
+    if (!validEvaluators.Contains(name))
+    {
+        Console.Error.WriteLine($"Unknown evaluator '{name}'. Valid: {string.Join(", ", validEvaluators)}");
+        return 1;
+    }
+}
+
+// Load scenarios using source generator (AOT-safe)
+List<EvalScenario> scenarios;
+if (cli.InputJson is not null)
+{
+    scenarios = JsonSerializer.Deserialize(cli.InputJson, JsonContext.Default.ListEvalScenario)
+                ?? throw new InvalidOperationException("Failed to parse --input-json");
+}
+else if (cli.InputFile is not null)
+{
+    var text = await File.ReadAllTextAsync(cli.InputFile);
+    scenarios = JsonSerializer.Deserialize(text, JsonContext.Default.ListEvalScenario)
+                ?? throw new InvalidOperationException($"Failed to parse {cli.InputFile}");
+}
+else
+{
+    var text = await Console.In.ReadToEndAsync();
+    scenarios = string.IsNullOrWhiteSpace(text)
+        ? []
+        : JsonSerializer.Deserialize(text, JsonContext.Default.ListEvalScenario) ?? [];
+}
+
+if (scenarios.Count == 0)
+{
+    Console.Error.WriteLine("No scenarios provided. Use --input, --input-json, or pipe JSON to stdin.");
+    return 1;
+}
+
+// Build chat configuration based on provider
+var chatConfig = cli.Provider switch
+{
+    "openai" => ChatConfigurationFactory.CreateOpenAICompatible(
+        cli.Endpoint!, cli.ApiKey!, cli.Model!),
+    "azure" when cli.ApiKey is not null => ChatConfigurationFactory.CreateAzureOpenAIWithKey(
+        cli.Endpoint!, cli.ApiKey, cli.Model!),
+    _ => ChatConfigurationFactory.CreateAzureOpenAI(
+        cli.Endpoint!, cli.Model!)
+};
+
+var request = new EvalRequest
+{
+    ExecutionName = cli.ExecutionName ?? $"eval-{DateTime.Now:yyyyMMddTHHmmss}",
+    StorageRootPath = cli.StoragePath,
+    EvaluatorNames = new HashSet<string>(cli.Evaluators, StringComparer.OrdinalIgnoreCase),
+    ChatConfiguration = chatConfig,
+    Scenarios = scenarios,
+    EnableResponseCaching = !cli.NoCache,
+    MaxConcurrency = cli.Parallel
+};
+
+// Run
+var console = new ProgressConsole();
+var result = await EvalEngine.RunAsync(request, console);
+
+// Output
+var outputText = cli.OutputFormat switch
+{
+    "summary" => FormatSummary(result),
+    _ => JsonSerializer.Serialize(result, JsonContext.Default.EvalResult)
+};
+
+if (cli.OutputFile is not null)
+    await File.WriteAllTextAsync(cli.OutputFile, outputText);
+else
+    Console.WriteLine(outputText);
+
+return 0;
+
+
+// ---- Argument parser ----
+static void PrintHelp()
+{
+    Console.WriteLine("""
+        eval-cli — Cross-platform AI evaluation CLI
+
+        Usage:
+          eval-cli [options]
+
+        Provider options:
+          --provider <name>         Provider type: azure or openai (default: azure)
+          --endpoint <url>          Endpoint URL (required)
+          --model, -m <name>        Model deployment name (Azure) or model ID (OpenAI) (required)
+          --api-key <key>           API key (required for openai; optional for azure)
+
+        Azure OpenAI examples:
+          eval-cli --endpoint https://my.openai.azure.com --model gpt-4o-mini --input scenarios.json
+          eval-cli --provider azure --endpoint https://my.openai.azure.com --model gpt-4o --api-key sk-... --input scenarios.json
+
+        OpenAI-compatible examples (DeepSeek, OpenCode, etc.):
+          eval-cli --provider openai --endpoint https://opencode.ai/zen/go/v1 --model deepseek-v4-flash --api-key sk-... --input scenarios.json
+
+        Evaluation options:
+          --evaluators, -e <list>   Evaluators: relevance,coherence,fluency,groundedness,completeness,equivalence
+                                    (default: relevance,coherence,groundedness)
+          --input, -i <file>        Path to JSON file containing scenarios
+          --input-json <json>       JSON string containing scenarios (alternative to --input)
+          --storage, -s <path>      Storage root path for results and cache (default: ./eval-results)
+          --name, -n <name>         Execution name for report grouping (default: timestamp)
+          --parallel, -p <n>        Max parallel evaluations (default: 4)
+          --no-cache                Disable response caching
+          --output, -o <fmt>        Output format: json or summary (default: json)
+          --output-file <file>      Write output to file instead of stdout
+          --help, -h                Show this help
+
+        Scenario JSON format:
+          [
+            {
+              "name": "team.feature.scenario",
+              "systemPrompt": "You are a helpful assistant.",
+              "userQuery": "How far is the Moon from Earth?",
+              "context": "The Moon is 225,623 miles at perigee...",
+              "referenceAnswer": "225,623 to 252,088 miles"
+            }
+          ]
+        """);
+}
+
+
+// ---- Helpers ----
+static string FormatSummary(EvalResult result)
+{
+    var lines = new List<string>
+    {
+        $"Execution: {result.ExecutionName}",
+        $"Completed: {result.CompletedAt:O}",
+        $"Scenarios: {result.Scenarios.Count}",
+        ""
+    };
+
+    foreach (var s in result.Scenarios)
+    {
+        lines.Add($"  {s.Name}");
+        foreach (var (name, metric) in s.Metrics)
+        {
+            var flag = metric.Failed ? "\u274c" : "\u2705";
+            lines.Add($"    {flag} {name}: {metric.Value:F2} ({metric.Rating}) \u2014 {metric.Reason}");
+        }
+        lines.Add("");
+    }
+
+    return string.Join('\n', lines);
+}
+
+
+file class ProgressConsole : IConsoleWriter
+{
+    public void WriteLine(string message) => Console.WriteLine(message);
+    public void WriteProgress(int completed, int total, string currentScenario)
+    {
+        var pct = (int)((double)completed / total * 100);
+        var bar = new string('#', pct / 5).PadRight(20);
+        Console.WriteLine($"  [{bar}] {completed}/{total}  {currentScenario}");
+    }
+}
+
+
+// ---- JSON source generator for AOT compatibility ----
+[JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase)]
+[JsonSerializable(typeof(List<EvalScenario>))]
+[JsonSerializable(typeof(EvalScenario))]
+[JsonSerializable(typeof(EvalResult))]
+[JsonSerializable(typeof(ScenarioSummary))]
+[JsonSerializable(typeof(MetricSummary))]
+internal partial class JsonContext : JsonSerializerContext;

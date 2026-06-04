@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+
+    <!-- Native AOT (uncomment when ready) -->
+    <!-- <PublishAot>true</PublishAot> -->
+    <!-- <InvariantGlobalization>true</InvariantGlobalization> -->
+
+    <!-- Self-contained single-file as default (AOT fallback) -->
+    <PublishSingleFile>true</PublishSingleFile>
+    <SelfContained>true</SelfContained>
+    <PublishTrimmed>true</PublishTrimmed>
+
+    <AssemblyName>eval-cli</AssemblyName>
+    <Description>Cross-platform AI evaluation CLI wrapping Microsoft.Extensions.AI.Evaluation</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\AiEvalCli.Engine\AiEvalCli.Engine.csproj" />
+  </ItemGroup>
+
+</Project>
