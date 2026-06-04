@@ -91,6 +91,7 @@ Scenarios are provided as a JSON array:
     "name": "team.feature.scenario-name",
     "systemPrompt": "You are a helpful astronomy assistant.",
     "userQuery": "How far is the Moon from Earth at its closest point?",
+    "response": "The Moon is approximately 225,623 miles from Earth at perigee.",
     "context": "The Moon's orbit is elliptical. At perigee, it is about 225,623 miles from Earth.",
     "referenceAnswer": "Approximately 225,623 miles at perigee."
   }
@@ -100,7 +101,8 @@ Scenarios are provided as a JSON array:
 | Field | Required | Description |
 |---|---|---|
 | `name` | Yes | Unique scenario name. Use dot notation (`team.feature.scenario`) for report hierarchy. |
-| `userQuery` | Yes | The prompt sent to the LLM. |
+| `userQuery` | Yes | The prompt that produced the response. |
+| `response` | Yes | The LLM response to evaluate. |
 | `systemPrompt` | No | System message prepended to the conversation. |
 | `context` | No | Grounding text for the `groundedness` evaluator. |
 | `referenceAnswer` | No | Expected answer for the `equivalence` evaluator. |
@@ -179,7 +181,7 @@ for s in scores["scenarios"]:
 library(jsonlite)
 
 scenarios <- toJSON(list(
-  list(name = "mymodel.qa.test", userQuery = "What is 2+2?")
+  list(name = "mymodel.qa.test", userQuery = "What is 2+2?", response = "4")
 ), auto_unbox = TRUE)
 
 result <- system2("eval-cli",

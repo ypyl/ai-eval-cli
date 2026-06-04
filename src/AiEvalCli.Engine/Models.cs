@@ -35,18 +35,21 @@ public class EvalRequest
 }
 
 /// <summary>
-/// A single evaluation scenario (prompt + response).
+/// A single evaluation scenario — the LLM response to evaluate.
 /// </summary>
 public class EvalScenario
 {
     /// <summary>Unique scenario name for report hierarchy. Use dot notation: "team.feature.scenario".</summary>
     public string Name { get; init; } = "";
 
-    /// <summary>System prompt (optional).</summary>
+    /// <summary>System prompt used to generate the response (optional).</summary>
     public string? SystemPrompt { get; init; }
 
-    /// <summary>User query.</summary>
+    /// <summary>User query that produced the response.</summary>
     public string UserQuery { get; init; } = "";
+
+    /// <summary>The LLM response to evaluate.</summary>
+    public string Response { get; init; } = "";
 
     /// <summary>Optional grounding context for groundedness evaluation.</summary>
     public string? Context { get; init; }

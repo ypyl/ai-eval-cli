@@ -1,3 +1,4 @@
+using Microsoft.Extensions.AI;
 using Microsoft.Extensions.AI.Evaluation;
 using Microsoft.Extensions.AI.Evaluation.Quality;
 using Microsoft.Extensions.AI.Evaluation.Reporting;
@@ -29,7 +30,7 @@ public static class EvalEngine
         var completed = 0;
         var total = request.Scenarios.Count;
 
-        // Process in parallel with controlled concurrency
+        // Run evaluation only — the response comes from the scenario, not generated here.
         var semaphore = new SemaphoreSlim(request.MaxConcurrency);
         var tasks = request.Scenarios.Select(async scenario =>
         {
@@ -39,8 +40,7 @@ public static class EvalEngine
                 await using var run = await config.CreateScenarioRunAsync(scenario.Name);
 
                 var messages = scenario.GetChatMessages();
-                var response = await run.ChatConfiguration!.ChatClient
-                    .GetResponseAsync(messages, cancellationToken: cancellationToken);
+                var response = new ChatResponse(new ChatMessage(ChatRole.Assistant, scenario.Response));
 
                 var result = await run.EvaluateAsync(
                     messages,

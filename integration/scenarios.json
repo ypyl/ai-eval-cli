@@ -3,6 +3,7 @@
     "name": "demo.knowledge.earth-moon",
     "systemPrompt": "You are a helpful science assistant. Answer concisely and accurately.",
     "userQuery": "How far is the Moon from the Earth on average?",
+    "response": "The Moon orbits Earth at an average distance of approximately 384,400 kilometers (238,855 miles).",
     "context": "The Moon orbits Earth at an average distance of 384,400 km (238,855 miles). It is the fifth-largest moon in the Solar System.",
     "referenceAnswer": "About 384,400 kilometers or 238,855 miles."
   },
@@ -10,6 +11,7 @@
     "name": "demo.knowledge.planet-order",
     "systemPrompt": "You are a helpful science assistant. Answer concisely and accurately.",
     "userQuery": "What is the order of planets in our solar system from the Sun?",
+    "response": "The planets in order from the Sun are: Mercury, Venus, Earth, Mars, Jupiter, Saturn, Uranus, and Neptune.",
     "context": "The planets in order from the Sun are: Mercury, Venus, Earth, Mars, Jupiter, Saturn, Uranus, and Neptune.",
     "referenceAnswer": "Mercury, Venus, Earth, Mars, Jupiter, Saturn, Uranus, Neptune."
   },
@@ -17,18 +19,21 @@
     "name": "demo.reasoning.water-states",
     "systemPrompt": "You are a helpful science assistant. Answer concisely and accurately.",
     "userQuery": "At what temperatures does water boil and freeze?",
+    "response": "Water freezes at 0°C (32°F) and boils at 100°C (212°F) at standard atmospheric pressure.",
     "referenceAnswer": "Water freezes at 0°C (32°F) and boils at 100°C (212°F) at standard atmospheric pressure."
   },
   {
     "name": "demo.math.simple-addition",
     "systemPrompt": "You are a precise calculator. Answer only with the result.",
     "userQuery": "What is 47 + 89?",
+    "response": "136",
     "referenceAnswer": "136"
   },
   {
     "name": "demo.reasoning.french-capital",
     "systemPrompt": "You are a helpful geography assistant.",
     "userQuery": "What is the capital of France and what is it known for?",
+    "response": "Paris is the capital of France. It is known for the Eiffel Tower, the Louvre Museum, and its rich cultural heritage.",
     "referenceAnswer": "Paris is the capital of France, known for the Eiffel Tower, Louvre Museum, and its cultural heritage."
   }
 ]
