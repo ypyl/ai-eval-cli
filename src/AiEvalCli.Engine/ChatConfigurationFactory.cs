@@ -17,21 +17,17 @@ public static class ChatConfigurationFactory
     public static ChatConfiguration CreateAzureOpenAI(
         string endpoint,
         string deploymentName,
+        bool stripThinking = false,
         string? tenantId = null)
     {
         var credential = new DefaultAzureCredential(
-            new DefaultAzureCredentialOptions
-            {
-                TenantId = tenantId
-            });
+            new DefaultAzureCredentialOptions { TenantId = tenantId });
 
-        var client = new AzureOpenAIClient(
-            new Uri(endpoint),
-            credential);
+        var client = new AzureOpenAIClient(new Uri(endpoint), credential);
+        var chatClient = client.GetChatClient(deploymentName).AsIChatClient();
 
-        var chatClient = client
-            .GetChatClient(deploymentName)
-            .AsIChatClient();
+        if (stripThinking)
+            chatClient = new StripThinkingChatClient(chatClient);
 
         return new ChatConfiguration(chatClient);
     }
@@ -42,40 +38,38 @@ public static class ChatConfigurationFactory
     public static ChatConfiguration CreateAzureOpenAIWithKey(
         string endpoint,
         string apiKey,
-        string deploymentName)
+        string deploymentName,
+        bool stripThinking = false)
     {
         var client = new AzureOpenAIClient(
             new Uri(endpoint),
             new System.ClientModel.ApiKeyCredential(apiKey));
 
-        var chatClient = client
-            .GetChatClient(deploymentName)
-            .AsIChatClient();
+        var chatClient = client.GetChatClient(deploymentName).AsIChatClient();
+
+        if (stripThinking)
+            chatClient = new StripThinkingChatClient(chatClient);
 
         return new ChatConfiguration(chatClient);
     }
 
     /// <summary>
     /// Creates a ChatConfiguration for an OpenAI-compatible API (OpenAI, DeepSeek, etc.).
-    /// Uses the standard OpenAI SDK with an API key and custom endpoint.
     /// </summary>
     public static ChatConfiguration CreateOpenAICompatible(
         string endpoint,
         string apiKey,
-        string modelName)
+        string modelName,
+        bool stripThinking = false)
     {
-        var options = new OpenAIClientOptions
-        {
-            Endpoint = new Uri(endpoint)
-        };
-
+        var options = new OpenAIClientOptions { Endpoint = new Uri(endpoint) };
         var client = new OpenAIClient(
-            new System.ClientModel.ApiKeyCredential(apiKey),
-            options);
+            new System.ClientModel.ApiKeyCredential(apiKey), options);
 
-        var chatClient = client
-            .GetChatClient(modelName)
-            .AsIChatClient();
+        var chatClient = client.GetChatClient(modelName).AsIChatClient();
+
+        if (stripThinking)
+            chatClient = new StripThinkingChatClient(chatClient);
 
         return new ChatConfiguration(chatClient);
     }
