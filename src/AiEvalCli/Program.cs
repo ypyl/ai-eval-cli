@@ -135,10 +135,13 @@ static void PrintHelp()
               "name": "team.feature.scenario",
               "systemPrompt": "You are a helpful assistant.",
               "userQuery": "How far is the Moon from Earth?",
+              "response": "The Moon is about 238,855 miles from Earth on average.",
               "context": "The Moon is 225,623 miles at perigee...",
               "referenceAnswer": "225,623 to 252,088 miles"
             }
           ]
+
+        The tool only evaluates — responses must be provided in the JSON, not generated.
         """);
 }
 
