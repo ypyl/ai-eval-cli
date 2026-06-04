@@ -57,11 +57,11 @@ if (scenarios.Count == 0)
 var chatConfig = cli.Provider switch
 {
     "openai" => ChatConfigurationFactory.CreateOpenAICompatible(
-        cli.Endpoint!, cli.ApiKey!, cli.Model!, cli.StripThinking),
+        cli.Endpoint!, cli.ApiKey!, cli.Model!),
     "azure" when cli.ApiKey is not null => ChatConfigurationFactory.CreateAzureOpenAIWithKey(
-        cli.Endpoint!, cli.ApiKey, cli.Model!, cli.StripThinking),
+        cli.Endpoint!, cli.ApiKey, cli.Model!),
     _ => ChatConfigurationFactory.CreateAzureOpenAI(
-        cli.Endpoint!, cli.Model!, cli.StripThinking)
+        cli.Endpoint!, cli.Model!)
 };
 
 var request = new EvalRequest
@@ -125,7 +125,6 @@ static void PrintHelp()
           --name, -n <name>         Execution name for report grouping (default: timestamp)
           --parallel, -p <n>        Max parallel evaluations (default: 4)
           --no-cache                Disable response caching
-          --strip-thinking          Strip &lt;thinking&gt;...&lt;/thinking&gt; blocks from judge model responses
           --output, -o <fmt>        Output format: json or summary (default: json)
           --output-file <file>      Write output to file instead of stdout
           --help, -h                Show this help

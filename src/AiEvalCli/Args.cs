@@ -26,7 +26,6 @@ internal sealed class Args
     public string? ExecutionName { get; private set; }
     public int Parallel { get; private set; } = 4;
     public bool NoCache { get; private set; }
-    public bool StripThinking { get; private set; }
     public string OutputFormat { get; private set; } = "json";
     public string? OutputFile { get; private set; }
 
@@ -76,9 +75,6 @@ internal sealed class Args
                     break;
                 case "--no-cache":
                     result.NoCache = true;
-                    break;
-                case "--strip-thinking":
-                    result.StripThinking = true;
                     break;
                 case "--output" or "-o":
                     result.OutputFormat = RequireValue(arg, next, ref i);
