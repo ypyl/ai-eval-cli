@@ -7,7 +7,7 @@ $KeyFile = Join-Path $ScriptDir "key.txt"
 $ScenariosFile = Join-Path $ScriptDir "scenarios.json"
 
 $Endpoint = if ($env:EVAL_ENDPOINT) { $env:EVAL_ENDPOINT } else { "https://opencode.ai/zen/go/v1" }
-$Model    = if ($env:EVAL_MODEL)    { $env:EVAL_MODEL }    else { "deepseek-v4-flash" }
+$Model    = if ($env:EVAL_MODEL)    { $env:EVAL_MODEL }    else { "deepseek-v4-pro" }
 
 # Read API key
 if (-not (Test-Path $KeyFile)) {

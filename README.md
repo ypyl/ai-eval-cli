@@ -1,6 +1,6 @@
 # eval-cli
 
-Cross-platform AI evaluation CLI wrapping [Microsoft.Extensions.AI.Evaluation](https://www.nuget.org/packages/Microsoft.Extensions.AI.Evaluation). Runs quality evaluators (Relevance, Coherence, Groundedness, etc.) against LLM responses. Ships as a single native binary — no .NET runtime required.
+Cross-platform AI evaluation CLI wrapping [Microsoft.Extensions.AI.Evaluation](https://www.nuget.org/packages/Microsoft.Extensions.AI.Evaluation). Runs quality evaluators (Relevance, Coherence, Groundedness, etc.) against LLM responses. Available as a native self-contained binary (no .NET runtime required) or as a dotnet tool for teams that already have .NET installed.
 
 ## Why
 
@@ -12,6 +12,8 @@ Evaluators, caching, and storage are standardized by the tool. Teams provide sce
 
 ### Install
 
+**Option 1: Native binary** (no .NET runtime required)
+
 Download the native binary for your platform from releases, or build from source:
 
 ```bash
@@ -20,6 +22,19 @@ git clone <repo-url> && cd ai-eval-cli
 dotnet publish src/AiEvalCli -c Release -r win-x64 -o ./out   # Windows
 dotnet publish src/AiEvalCli -c Release -r linux-x64 -o ./out  # Linux
 dotnet publish src/AiEvalCli -c Release -r osx-arm64 -o ./out  # macOS
+```
+
+**Option 2: Dotnet tool** (requires .NET 10 SDK or runtime)
+
+```bash
+dotnet tool install --global eval-cli
+```
+
+For repo-local use with a tool manifest:
+
+```bash
+dotnet new tool-manifest
+dotnet tool install eval-cli
 ```
 
 ### Run

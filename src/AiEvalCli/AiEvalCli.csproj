@@ -17,10 +17,21 @@
 
     <AssemblyName>eval-cli</AssemblyName>
     <Description>Cross-platform AI evaluation CLI wrapping Microsoft.Extensions.AI.Evaluation</Description>
+
+    <!-- Dotnet tool packaging -->
+    <PackAsTool>true</PackAsTool>
+    <PackageId>eval-cli</PackageId>
+    <Version>1.0.0</Version>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\AiEvalCli.Engine\AiEvalCli.Engine.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\..\README.md" Pack="true" PackagePath="\" />
   </ItemGroup>
 
 </Project>
