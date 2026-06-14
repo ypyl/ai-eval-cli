@@ -1,0 +1,32 @@
+[
+  {
+    "name": "qa.water-boil",
+    "userQuery": "At what temperature does water boil?",
+    "response": "Water boils at 100\u00b0C at standard atmospheric pressure.",
+    "referenceAnswer": "100\u00b0C (212\u00b0F) at standard atmospheric pressure."
+  },
+  {
+    "name": "qa.water-boil",
+    "userQuery": "At what temperature does water boil?",
+    "response": "Water boils at 212\u00b0F at sea level.",
+    "referenceAnswer": "100\u00b0C (212\u00b0F) at standard atmospheric pressure."
+  },
+  {
+    "name": "qa.water-boil",
+    "userQuery": "At what temperature does water boil?",
+    "response": "It depends on altitude. At sea level it's 100\u00b0C, but at high altitudes it's lower.",
+    "referenceAnswer": "100\u00b0C (212\u00b0F) at standard atmospheric pressure."
+  },
+  {
+    "name": "qa.moon-distance",
+    "userQuery": "How far is the Moon from Earth?",
+    "response": "The Moon is about 384,400 km from Earth on average.",
+    "referenceAnswer": "About 384,400 kilometers or 238,855 miles."
+  },
+  {
+    "name": "qa.moon-distance",
+    "userQuery": "How far is the Moon from Earth?",
+    "response": "Approximately 238,855 miles.",
+    "referenceAnswer": "About 384,400 kilometers or 238,855 miles."
+  }
+]

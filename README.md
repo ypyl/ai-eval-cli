@@ -70,6 +70,7 @@ Provider options:
   --provider <name>         azure or openai (default: azure)
   --endpoint <url>          Endpoint URL (required)
   --model, -m <name>        Model name (Azure deployment or OpenAI model ID; required)
+  --deployment, -d <name>   Alias for --model
   --api-key <key>           API key (required for openai; optional for azure)
 
 Evaluation options:
@@ -81,7 +82,7 @@ Evaluation options:
   --name, -n <name>         Execution name for report grouping (default: timestamp)
   --parallel, -p <n>        Max parallel evaluations (default: 4)
   --no-cache                Disable response caching
-  --output, -o <fmt>        Output format: json or summary (default: json)
+  --output, -o <fmt>        Output format: json, summary, or stats (default: json)
   --output-file <file>      Write output to file instead of stdout
   --help, -h                Show this help
 
@@ -122,6 +123,74 @@ Scenarios are provided as a JSON array:
 | `context` | No | Grounding text for the `groundedness` evaluator. |
 | `referenceAnswer` | No | Expected answer for the `equivalence` evaluator. |
 
+## Multi-Run Aggregation
+
+LLMs are non-deterministic — a single response evaluated once doesn't reveal reliability. `eval-cli` **always** groups scenarios with the same `name` and computes per-metric statistics, then persists everything to disk alongside the response cache.
+
+### How it works
+
+1. Provide multiple scenarios with the **same `name`** but **different `response`** values — each representing a different LLM output for the same prompt
+2. The tool evaluates each individually (in parallel, using unique iteration names for disk storage)
+3. Results are grouped by `name` and per-metric statistics (mean, std dev, min, max, failed fraction) are computed automatically
+4. Both individual runs and stats are saved to `{storage}/results/{executionName}/{scenarioName}/`
+
+### Folder layout
+
+Each run produces a structured results folder:
+
+```
+eval-results/
+  cache/                              ← library-managed response cache
+  results/
+    eval-20260614T192748/             ← execution-scoped folder
+      qa.water-boil/
+        1.json                        ← individual run 1
+        2.json                        ← individual run 2
+        3.json                        ← individual run 3
+        _stats.json                   ← mean ± std across all runs
+      qa.moon-distance/
+        1.json
+        2.json
+        _stats.json
+```
+
+Each `{iteration}.json` contains a full `ScenarioSummary` (per-metric scores). `_stats.json` contains the `AggregatedScenario` (mean, std dev, min, max, failed fraction per metric).
+
+### What the stats tell you
+
+| Pattern | Meaning |
+|---------|---------|
+| High mean, low std dev | Consistently good |
+| High mean, high std dev | Usually good, occasionally bad — flaky |
+| Low mean, low std dev | Consistently bad — prompt is a weakness |
+| Low mean, high std dev | Inconsistent — sometimes ok, mostly not |
+
+**Std dev is arguably more important than mean.** A model with mean 4.0 ± 0.2 is more *reliable* than one with mean 4.5 ± 1.5.
+
+### Example
+
+```json
+[
+  { "name": "qa.moon-distance", "userQuery": "How far is the Moon?", "response": "About 238,855 miles on average." },
+  { "name": "qa.moon-distance", "userQuery": "How far is the Moon?", "response": "The Moon is ~384,400 km from Earth." },
+  { "name": "qa.moon-distance", "userQuery": "How far is the Moon?", "response": "It varies — 225k to 252k miles." },
+  { "name": "qa.moon-distance", "userQuery": "How far is the Moon?", "response": "Approximately 1.3 light-seconds away." },
+  { "name": "qa.moon-distance", "userQuery": "How far is the Moon?", "response": "Around 240,000 miles, give or take." }
+]
+```
+
+```bash
+eval-cli --input multi-runs.json --output stats
+```
+
+### Caching behavior
+
+Response caching is **enabled by default**. Each unique response gets its own cache entry (the cache key includes response text), so re-running the same data gives consistent results. `--no-cache` is only needed when measuring the *judge LLM's* non-determinism (evaluating the same response multiple times).
+
+### Reporting
+
+Each same-name run gets a unique iteration name (`1`, `2`, `3`, …) in disk storage. The official `aieval` report groups them under the same scenario, showing iteration-level detail with built-in aggregation across iterations.
+
 ## Output
 
 ### JSON (default)
@@ -148,6 +217,16 @@ Scenarios are provided as a JSON array:
         }
       }
     }
+  ],
+  "groups": [
+    {
+      "name": "test.qa.moon-distance",
+      "sampleCount": 1,
+      "metrics": {
+        "Relevance": { "mean": 4.0, "stdDev": 0.0, "min": 4.0, "max": 4.0, "failedFraction": 0.0 },
+        "Coherence": { "mean": 5.0, "stdDev": 0.0, "min": 5.0, "max": 5.0, "failedFraction": 0.0 }
+      }
+    }
   ]
 }
 ```
@@ -163,6 +242,22 @@ Scenarios: 1
     ✅ Relevance: 4.00 (Good) — The response directly addresses the question...
     ✅ Coherence: 5.00 (Exceptional) — The response is logically structured...
 ```
+
+### Stats (`--output stats`)
+
+```
+Execution: eval-20260604T120000
+Completed: 2026-06-04T12:05:23Z
+Scenarios: 5
+Groups: 1
+
+Scenario: qa.moon-distance (n=5)
+  Relevance:    4.60 ± 0.55  [4.00–5.00]
+  Coherence:    4.00 ± 0.00  [4.00–4.00]
+  Fluency:      3.20 ± 0.45  [3.00–4.00]  (80% failed)
+```
+
+Each line shows: **mean ± std dev  [min–max]** with an optional failure percentage when any runs in the group failed evaluation.
 
 ## Integration Examples
 
@@ -389,13 +484,20 @@ All evaluators score on a 1–5 scale. Scores are mapped to ratings: `Unacceptab
 
 ## Caching
 
-By default, LLM responses are cached on disk under `--storage`. Subsequent runs with identical prompts reuse cached responses — saving cost and time. Cache expires after 14 days. Use `--no-cache` to disable.
+By default, judge LLM responses are cached on disk under `--storage`. The cache key includes the full prompt and response text, so scenarios with the same name but different responses still get cached independently. Re-running the same data gives identical results without additional LLM calls. Cache expires after 14 days. Use `--no-cache` to disable.
 
 For shared caching across teams, point `--storage` at a shared network path or configure Azure Storage in the source.
 
 ## Reports
 
-`eval-cli` persists evaluation results to the `--storage` directory in the format used by `Microsoft.Extensions.AI.Evaluation.Reporting`. This means the official `aieval` CLI can generate rich HTML reports from the same data — no extra export step needed.
+`eval-cli` persists evaluation results to the `--storage` directory in two locations:
+
+- **`results/`** — JSON files written by `eval-cli`: per-iteration `{iteration}.json` and `_stats.json` per scenario folder
+- **`cache/`** — response cache managed by `Microsoft.Extensions.AI.Evaluation.Reporting`
+
+The cache directory is in the format used by the official `aieval` CLI, which can generate rich HTML reports from the same data — no extra export step needed.
+
+Same-name scenarios are stored as iterations (`1.json`, `2.json`, …) under the same scenario directory. The official report groups them naturally under one scenario name and can show iteration-level detail or aggregate view.
 
 ```bash
 # 1. Run evaluation (results automatically saved to storage path)
@@ -453,8 +555,8 @@ steps:
 ```
 src/
 ├── AiEvalCli.Engine/     Shared library — evaluation pipeline
-│   ├── EvalEngine.cs      Core: RunAsync() — parallel scenario execution
-│   ├── Models.cs          EvalRequest, EvalScenario, EvalResult types
+│   ├── EvalEngine.cs      Core: RunAsync() + Aggregate() + PersistAsync() — parallel execution, statistical grouping, disk persistence
+│   ├── Models.cs          EvalRequest, EvalScenario, EvalResult, AggregatedEvalResult types
 │   └── ChatConfigurationFactory.cs  Azure OpenAI credential setup
 │
 └── AiEvalCli/            Console application

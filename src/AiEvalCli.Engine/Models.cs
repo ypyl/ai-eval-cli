@@ -108,6 +108,39 @@ public class MetricSummary
 }
 
 /// <summary>
+/// Per-metric descriptive statistics computed across multiple runs.
+/// </summary>
+public record MetricStats
+{
+    public double Mean { get; init; }
+    public double StdDev { get; init; }
+    public double Min { get; init; }
+    public double Max { get; init; }
+    public double FailedFraction { get; init; }
+}
+
+/// <summary>
+/// Aggregated statistics for a single scenario name across multiple evaluation runs.
+/// </summary>
+public record AggregatedScenario
+{
+    public string Name { get; init; } = "";
+    public int SampleCount { get; init; }
+    public Dictionary<string, MetricStats> Metrics { get; init; } = [];
+}
+
+/// <summary>
+/// Evaluation result that includes both individual scenarios and aggregated groups.
+/// </summary>
+public class AggregatedEvalResult
+{
+    public string ExecutionName { get; init; } = "";
+    public DateTime CompletedAt { get; init; }
+    public List<ScenarioSummary> Scenarios { get; init; } = [];
+    public List<AggregatedScenario> Groups { get; init; } = [];
+}
+
+/// <summary>
 /// Abstracts console output so the engine doesn't depend on System.Console.
 /// </summary>
 public interface IConsoleWriter

@@ -79,11 +79,17 @@ var request = new EvalRequest
 var console = new ProgressConsole();
 var result = await EvalEngine.RunAsync(request, console);
 
-// Output
+// Always aggregate and persist
+var aggregated = EvalEngine.Aggregate(result);
+var persistedPath = await EvalEngine.PersistAsync(aggregated, request.StorageRootPath, JsonContext.Default);
+Console.WriteLine($"Results saved to: {persistedPath}");
+
+// Output to stdout
 var outputText = cli.OutputFormat switch
 {
+    "stats" => FormatStats(aggregated),
     "summary" => FormatSummary(result),
-    _ => JsonSerializer.Serialize(result, JsonContext.Default.EvalResult)
+    _ => JsonSerializer.Serialize(aggregated, JsonContext.Default.AggregatedEvalResult)
 };
 
 if (cli.OutputFile is not null)
@@ -125,7 +131,7 @@ static void PrintHelp()
           --name, -n <name>         Execution name for report grouping (default: timestamp)
           --parallel, -p <n>        Max parallel evaluations (default: 4)
           --no-cache                Disable response caching
-          --output, -o <fmt>        Output format: json or summary (default: json)
+          --output, -o <fmt>        Output format: json, summary, or stats (default: json)
           --output-file <file>      Write output to file instead of stdout
           --help, -h                Show this help
 
@@ -141,12 +147,42 @@ static void PrintHelp()
             }
           ]
 
+        Multi-run aggregation example:
+          eval-cli --input multi-runs.json --output stats
+
         The tool only evaluates — responses must be provided in the JSON, not generated.
         """);
 }
 
 
 // ---- Helpers ----
+static string FormatStats(AggregatedEvalResult result)
+{
+    var lines = new List<string>
+    {
+        $"Execution: {result.ExecutionName}",
+        $"Completed: {result.CompletedAt:O}",
+        $"Scenarios: {result.Scenarios.Count}",
+        $"Groups: {result.Groups.Count}",
+        ""
+    };
+
+    foreach (var g in result.Groups)
+    {
+        lines.Add($"Scenario: {g.Name} (n={g.SampleCount})");
+        foreach (var (metricName, stats) in g.Metrics)
+        {
+            var line = $"  {metricName}: {stats.Mean:F2} \u00b1 {stats.StdDev:F2}  [{stats.Min:F2}\u2013{stats.Max:F2}]";
+            if (stats.FailedFraction > 0)
+                line += $"  ({stats.FailedFraction:P0} failed)";
+            lines.Add(line);
+        }
+        lines.Add("");
+    }
+
+    return string.Join('\n', lines);
+}
+
 static string FormatSummary(EvalResult result)
 {
     var lines = new List<string>
@@ -191,4 +227,7 @@ file class ProgressConsole : IConsoleWriter
 [JsonSerializable(typeof(EvalResult))]
 [JsonSerializable(typeof(ScenarioSummary))]
 [JsonSerializable(typeof(MetricSummary))]
+[JsonSerializable(typeof(AggregatedEvalResult))]
+[JsonSerializable(typeof(AggregatedScenario))]
+[JsonSerializable(typeof(MetricStats))]
 internal partial class JsonContext : JsonSerializerContext;
