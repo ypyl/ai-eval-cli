@@ -132,7 +132,7 @@ LLMs are non-deterministic — a single response evaluated once doesn't reveal r
 1. Provide multiple scenarios with the **same `name`** but **different `response`** values — each representing a different LLM output for the same prompt
 2. The tool evaluates each individually (in parallel, using unique iteration names for disk storage)
 3. Results are grouped by `name` and per-metric statistics (mean, std dev, min, max, failed fraction) are computed automatically
-4. Both individual runs and stats are saved to `{storage}/results/{executionName}/{scenarioName}/`
+4. Individual runs are saved to `{storage}/results/{executionName}/{scenarioName}/` (library-native format). Aggregated stats are saved to `{storage}/stats/{executionName}/{scenarioName}/_stats.json`
 
 ### Folder layout
 
@@ -142,19 +142,23 @@ Each run produces a structured results folder:
 eval-results/
   cache/                              ← library-managed response cache
   results/
-    eval-20260614T192748/             ← execution-scoped folder
+    eval-20260614T192748/             ← execution-scoped folder (library-native format)
       qa.water-boil/
         1.json                        ← individual run 1
         2.json                        ← individual run 2
         3.json                        ← individual run 3
-        _stats.json                   ← mean ± std across all runs
       qa.moon-distance/
         1.json
         2.json
+  stats/
+    eval-20260614T192748/             ← aggregated stats (added by eval-cli)
+      qa.water-boil/
+        _stats.json                   ← mean ± std across all runs
+      qa.moon-distance/
         _stats.json
 ```
 
-Each `{iteration}.json` contains a full `ScenarioSummary` (per-metric scores). `_stats.json` contains the `AggregatedScenario` (mean, std dev, min, max, failed fraction per metric).
+Individual `{iteration}.json` files are in the library's native `ScenarioRunResult` format (managed by `DiskBasedResultStore`). `_stats.json` contains the `AggregatedScenario` (mean, std dev, min, max, failed fraction per metric) and lives in a separate `stats/` tree so it doesn't interfere with `aieval report`.
 
 ### What the stats tell you
 
@@ -488,9 +492,10 @@ For shared caching across teams, point `--storage` at a shared network path or c
 
 ## Reports
 
-`eval-cli` persists evaluation results to the `--storage` directory in two locations:
+`eval-cli` persists evaluation results to the `--storage` directory:
 
-- **`results/`** — JSON files written by `eval-cli`: per-iteration `{iteration}.json` and `_stats.json` per scenario folder
+- **`results/`** — per-iteration JSON files in the library's native `ScenarioRunResult` format (managed by `DiskBasedResultStore`)
+- **`stats/`** — `_stats.json` per scenario folder with aggregated statistics (mean, std dev, min, max, failed fraction)
 - **`cache/`** — response cache managed by `Microsoft.Extensions.AI.Evaluation.Reporting`
 
 The cache directory is in the format used by the official `aieval` CLI, which can generate rich HTML reports from the same data — no extra export step needed.

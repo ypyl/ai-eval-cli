@@ -165,7 +165,10 @@ public static class EvalEngine
     }
 
     /// <summary>
-    /// Persists evaluation results (individual runs and per-scenario stats) to disk.
+    /// Persists per-scenario aggregated statistics (_stats.json) to disk.
+    /// Individual evaluation results are already persisted by Microsoft.Extensions.AI.Evaluation
+    /// via DiskBasedResultStore — we only add the aggregated stats that the library doesn't produce.
+    /// Stats are written to a separate stats/ directory so they don't interfere with aieval report scanning.
     /// Returns the path to the execution folder.
     /// </summary>
     public static async Task<string> PersistAsync(
@@ -173,25 +176,10 @@ public static class EvalEngine
         string storageRoot,
         JsonSerializerContext jsonContext)
     {
-        var executionDir = Path.Combine(storageRoot, "results", result.ExecutionName);
+        var executionDir = Path.Combine(storageRoot, "stats", result.ExecutionName);
 
-        // Track iteration numbers per scenario name (same counting logic as RunAsync)
-        var iterationCounters = new Dictionary<string, int>(StringComparer.Ordinal);
-
-        foreach (var scenario in result.Scenarios)
-        {
-            var iteration = iterationCounters.TryGetValue(scenario.Name, out var count) ? count + 1 : 1;
-            iterationCounters[scenario.Name] = iteration;
-
-            var scenarioDir = Path.Combine(executionDir, scenario.Name);
-            Directory.CreateDirectory(scenarioDir);
-
-            var iterationPath = Path.Combine(scenarioDir, $"{iteration}.json");
-            var iterationJson = JsonSerializer.Serialize(scenario, typeof(ScenarioSummary), jsonContext);
-            await File.WriteAllTextAsync(iterationPath, iterationJson);
-        }
-
-        // Write _stats.json per aggregated group
+        // Write only _stats.json per aggregated group.
+        // Per-iteration results are owned by Microsoft.Extensions.AI.Evaluation's DiskBasedResultStore.
         foreach (var group in result.Groups)
         {
             var scenarioDir = Path.Combine(executionDir, group.Name);
