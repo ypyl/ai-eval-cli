@@ -1,5 +1,7 @@
 # eval-cli
 
+[![NuGet Version](https://img.shields.io/nuget/v/eval-cli)](https://www.nuget.org/packages/eval-cli)
+
 Cross-platform AI evaluation CLI wrapping [Microsoft.Extensions.AI.Evaluation](https://www.nuget.org/packages/Microsoft.Extensions.AI.Evaluation). Runs quality evaluators (Relevance, Coherence, Groundedness, etc.) against LLM responses. Available as a native self-contained binary (no .NET runtime required) or as a dotnet tool for teams that already have .NET installed.
 
 ## Why
