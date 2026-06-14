@@ -26,7 +26,7 @@ internal sealed class Args
     public string? ExecutionName { get; private set; }
     public int Parallel { get; private set; } = 4;
     public bool NoCache { get; private set; }
-    public string OutputFormat { get; private set; } = "json";
+    public bool OutputJson { get; private set; }
     public string? OutputFile { get; private set; }
 
     public static Args Parse(string[] args)
@@ -76,8 +76,11 @@ internal sealed class Args
                 case "--no-cache":
                     result.NoCache = true;
                     break;
+                case "--json":
+                    result.OutputJson = true;
+                    break;
                 case "--output" or "-o":
-                    result.OutputFormat = RequireValue(arg, next, ref i);
+                    Console.Error.WriteLine("--output/-o is no longer supported. Use --json for machine-readable output, or omit for the default human-readable view.");
                     break;
                 case "--output-file":
                     result.OutputFile = RequireValue(arg, next, ref i);

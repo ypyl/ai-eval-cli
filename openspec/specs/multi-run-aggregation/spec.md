@@ -39,23 +39,42 @@ The system SHALL provide an `AggregatedEvalResult` type containing the original 
 - **WHEN** evaluation completes
 - **THEN** the returned object contains both `Scenarios` (all individual `ScenarioSummary`) and `Groups` (all `AggregatedScenario` entries)
 
-### Requirement: CLI --output stats renders aggregated view
-The CLI SHALL accept `--output stats` format that renders a human-readable aggregated view grouped by scenario name.
+### Requirement: Default stdout shows combined human-readable view
+The default stdout output SHALL show a combined human-readable view that includes aggregated statistics (mean ± std dev, min–max) per group when same-name scenarios exist, and compact per-scenario scores with pass/fail indicators.
 
-#### Scenario: Stats output format
-- **WHEN** the user runs `eval-cli --input runs.json --output stats`
-- **THEN** output begins with `Scenario: <name> (n=N)` blocks, each showing per-metric lines formatted as `<Metric>: <Mean> ± <StdDev>  [<Min>–<Max>]`
+#### Scenario: Combined view for multi-run input
+- **WHEN** the user runs `eval-cli --input multi-runs.json` with no output flag
+- **THEN** stdout shows `Scenario: <name> (n=N)` blocks with per-metric lines formatted as `<Metric>: <Mean> ± <StdDev>  [<Min>–<Max>]  ✅/❌`
 
-#### Scenario: Stats output includes failed fraction for metrics with failures
+#### Scenario: Combined view for single-run input
+- **WHEN** the user runs `eval-cli --input scenarios.json` with no output flag and all scenarios have unique names
+- **THEN** stdout shows per-scenario scores with pass/fail indicators; no ± or range since n=1
+
+#### Scenario: Failed fraction displayed in combined view
 - **WHEN** a metric group has `FailedFraction > 0`
-- **THEN** the stats line appends `  (X% failed)` after the range
+- **THEN** the metric line appends `  (X% failed)` after the range
 
-### Requirement: CLI --output json includes groups
-The `--output json` output (default) SHALL include a `groups` array alongside the `scenarios` array.
+### Requirement: CLI --json flag produces machine-readable output
+The CLI SHALL accept a `--json` flag that, when present, outputs the full `AggregatedEvalResult` as JSON to stdout instead of the default human-readable view.
 
-#### Scenario: JSON output includes groups
-- **WHEN** the user runs `eval-cli --input runs.json --output json`
-- **THEN** the JSON payload contains both `"scenarios"` (array of `ScenarioSummary`) and `"groups"` (array of `AggregatedScenario`)
+#### Scenario: JSON output with --json flag
+- **WHEN** the user runs `eval-cli --input runs.json --json`
+- **THEN** stdout is a JSON payload containing both `"scenarios"` and `"groups"` arrays
+
+#### Scenario: Default output is human-readable
+- **WHEN** the user runs `eval-cli --input runs.json` without `--json`
+- **THEN** stdout is the combined human-readable view, not JSON
+
+### Requirement: --output flag is removed
+The CLI SHALL NOT accept `--output` or `-o` flags. These SHALL be replaced by the `--json` boolean flag for machine-readable output.
+
+#### Scenario: --output flag produces error
+- **WHEN** the user runs `eval-cli --output summary`
+- **THEN** the tool prints an error indicating `--output` is no longer supported and that `--json` should be used for machine-readable output
+
+#### Scenario: -o flag produces error
+- **WHEN** the user runs `eval-cli -o json`
+- **THEN** the tool prints an error indicating `-o` is no longer supported and that `--json` should be used for machine-readable output
 
 ### Requirement: JSON source generator includes new types
 The `JsonContext` source generator SHALL include `[JsonSerializable]` entries for `AggregatedEvalResult`, `AggregatedScenario`, and `MetricStats` to maintain AOT compatibility.

@@ -31,5 +31,4 @@ dotnet run --project "$ProjectDir/src/AiEvalCli" -c Release -- `
     --api-key $ApiKey `
     --input $ScenariosFile `
     --evaluators relevance,coherence,fluency `
-    --parallel 3 `
-    --output summary
+    --parallel 3

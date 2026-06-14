@@ -58,7 +58,7 @@ eval-cli --provider openai \
   --endpoint "https://opencode.ai/zen/go/v1" \
   --model "deepseek-v4-flash" \
   --api-key "sk-..." \
-  --input ./scenarios.json --output summary
+  --input ./scenarios.json
 ```
 
 ## Usage
@@ -82,7 +82,7 @@ Evaluation options:
   --name, -n <name>         Execution name for report grouping (default: timestamp)
   --parallel, -p <n>        Max parallel evaluations (default: 4)
   --no-cache                Disable response caching
-  --output, -o <fmt>        Output format: json, summary, or stats (default: json)
+  --json                    Output machine-readable JSON (default: human-readable view)
   --output-file <file>      Write output to file instead of stdout
   --help, -h                Show this help
 
@@ -180,7 +180,7 @@ Each `{iteration}.json` contains a full `ScenarioSummary` (per-metric scores). `
 ```
 
 ```bash
-eval-cli --input multi-runs.json --output stats
+eval-cli --input multi-runs.json
 ```
 
 ### Caching behavior
@@ -193,7 +193,7 @@ Each same-name run gets a unique iteration name (`1`, `2`, `3`, …) in disk sto
 
 ## Output
 
-### JSON (default)
+### JSON (`--json`)
 
 ```json
 {
@@ -231,33 +231,34 @@ Each same-name run gets a unique iteration name (`1`, `2`, `3`, …) in disk sto
 }
 ```
 
-### Summary (`--output summary`)
+### Default (human-readable)
+
+Stats view when same-name scenarios exist (n>1):
 
 ```
-Execution: eval-20260604T120000
-Completed: 2026-06-04T12:05:23Z
-Scenarios: 1
+eval-20260614T192748 — 5 scenarios, 2 groups
 
-  test.qa.moon-distance
-    ✅ Relevance: 4.00 (Good) — The response directly addresses the question...
-    ✅ Coherence: 5.00 (Exceptional) — The response is logically structured...
+qa.water-boil (n=3)
+  ✅ Coherence: 4.00 ± 0.00  [4.00–4.00]
+  ✅ Relevance: 4.33 ± 0.58  [4.00–5.00]
+
+qa.moon-distance (n=2)
+  ✅ Relevance: 4.00 ± 0.00  [4.00–4.00]
+  ✅ Coherence: 4.00 ± 0.00  [4.00–4.00]
 ```
 
-### Stats (`--output stats`)
+Compact view when all scenarios are single-run (n=1):
 
 ```
-Execution: eval-20260604T120000
-Completed: 2026-06-04T12:05:23Z
-Scenarios: 5
-Groups: 1
+eval-20260614T192748 — 1 scenario, 1 group
 
-Scenario: qa.moon-distance (n=5)
-  Relevance:    4.60 ± 0.55  [4.00–5.00]
-  Coherence:    4.00 ± 0.00  [4.00–4.00]
-  Fluency:      3.20 ± 0.45  [3.00–4.00]  (80% failed)
+qa.single (n=1)
+  ✅ Relevance: 4.00
 ```
 
-Each line shows: **mean ± std dev  [min–max]** with an optional failure percentage when any runs in the group failed evaluation.
+Each line shows **✅ or ❌** per metric, with **mean ± std dev  [min–max]** when n>1, and an optional failure percentage when any runs in the group failed evaluation.
+
+Use `--json` for machine-readable output (includes both `scenarios` and `groups` arrays).
 
 ## Integration Examples
 
@@ -275,7 +276,7 @@ scenarios = [
 ]
 
 result = subprocess.run(
-    ["eval-cli", "--endpoint", endpoint, "--model", model, "-o", "json"],
+    ["eval-cli", "--endpoint", endpoint, "--model", model, "--json"],
     input=json.dumps(scenarios),
     capture_output=True, text=True
 )
@@ -295,7 +296,7 @@ scenarios <- toJSON(list(
 ), auto_unbox = TRUE)
 
 result <- system2("eval-cli",
-  args = c("--endpoint", endpoint, "--model", model, "-o", "json"),
+  args = c("--endpoint", endpoint, "--model", model, "--json"),
   input = scenarios, stdout = TRUE
 )
 scores <- fromJSON(result)
@@ -309,8 +310,7 @@ scores <- fromJSON(result)
     eval-cli \
       --endpoint "${{ secrets.AZURE_OPENAI_ENDPOINT }}" \
       --model "${{ vars.AZURE_OPENAI_DEPLOYMENT }}" \
-      --input ./scenarios.json \
-      --output summary
+      --input ./scenarios.json
   timeout-minutes: 15
 ```
 
@@ -346,7 +346,6 @@ steps:
           --model "$(AZURE_OPENAI_DEPLOYMENT)" \
           --input ./scenarios.json \
           --name "$(Build.BuildNumber)" \
-          --output summary \
           --output-file "$(Build.ArtifactStagingDirectory)/eval-report.json"
     timeoutInMinutes: 15
 
@@ -385,8 +384,7 @@ steps:
       eval-cli \
         --endpoint "$(AZURE_OPENAI_ENDPOINT)" \
         --model "$(AZURE_OPENAI_DEPLOYMENT)" \
-        --input ./scenarios.json \
-        --output summary
+        --input ./scenarios.json
     displayName: 'Run AI evaluation'
     timeoutInMinutes: 15
 ```
@@ -401,7 +399,7 @@ steps:
         --endpoint "$(AZURE_OPENAI_ENDPOINT)" \
         --model "$(AZURE_OPENAI_DEPLOYMENT)" \
         --input ./scenarios.json \
-        --output json \
+        --json \
         --output-file eval-results.json
     displayName: 'Run AI evaluation'
     timeoutInMinutes: 15

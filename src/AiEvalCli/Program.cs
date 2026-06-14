@@ -85,12 +85,9 @@ var persistedPath = await EvalEngine.PersistAsync(aggregated, request.StorageRoo
 Console.WriteLine($"Results saved to: {persistedPath}");
 
 // Output to stdout
-var outputText = cli.OutputFormat switch
-{
-    "stats" => FormatStats(aggregated),
-    "summary" => FormatSummary(result),
-    _ => JsonSerializer.Serialize(aggregated, JsonContext.Default.AggregatedEvalResult)
-};
+var outputText = cli.OutputJson
+    ? JsonSerializer.Serialize(aggregated, JsonContext.Default.AggregatedEvalResult)
+    : FormatHuman(aggregated);
 
 if (cli.OutputFile is not null)
     await File.WriteAllTextAsync(cli.OutputFile, outputText);
@@ -131,7 +128,7 @@ static void PrintHelp()
           --name, -n <name>         Execution name for report grouping (default: timestamp)
           --parallel, -p <n>        Max parallel evaluations (default: 4)
           --no-cache                Disable response caching
-          --output, -o <fmt>        Output format: json, summary, or stats (default: json)
+          --json                    Output machine-readable JSON instead of human-readable view
           --output-file <file>      Write output to file instead of stdout
           --help, -h                Show this help
 
@@ -148,7 +145,7 @@ static void PrintHelp()
           ]
 
         Multi-run aggregation example:
-          eval-cli --input multi-runs.json --output stats
+          eval-cli --input multi-runs.json
 
         The tool only evaluates — responses must be provided in the JSON, not generated.
         """);
@@ -156,50 +153,31 @@ static void PrintHelp()
 
 
 // ---- Helpers ----
-static string FormatStats(AggregatedEvalResult result)
+static string FormatHuman(AggregatedEvalResult result)
 {
     var lines = new List<string>
     {
-        $"Execution: {result.ExecutionName}",
-        $"Completed: {result.CompletedAt:O}",
-        $"Scenarios: {result.Scenarios.Count}",
-        $"Groups: {result.Groups.Count}",
+        $"{result.ExecutionName} \u2014 {result.Scenarios.Count} scenario{(result.Scenarios.Count == 1 ? "" : "s")}, {result.Groups.Count} group{(result.Groups.Count == 1 ? "" : "s")}",
         ""
     };
 
     foreach (var g in result.Groups)
     {
-        lines.Add($"Scenario: {g.Name} (n={g.SampleCount})");
+        lines.Add($"{g.Name} (n={g.SampleCount})");
         foreach (var (metricName, stats) in g.Metrics)
         {
-            var line = $"  {metricName}: {stats.Mean:F2} \u00b1 {stats.StdDev:F2}  [{stats.Min:F2}\u2013{stats.Max:F2}]";
-            if (stats.FailedFraction > 0)
-                line += $"  ({stats.FailedFraction:P0} failed)";
-            lines.Add(line);
-        }
-        lines.Add("");
-    }
-
-    return string.Join('\n', lines);
-}
-
-static string FormatSummary(EvalResult result)
-{
-    var lines = new List<string>
-    {
-        $"Execution: {result.ExecutionName}",
-        $"Completed: {result.CompletedAt:O}",
-        $"Scenarios: {result.Scenarios.Count}",
-        ""
-    };
-
-    foreach (var s in result.Scenarios)
-    {
-        lines.Add($"  {s.Name}");
-        foreach (var (name, metric) in s.Metrics)
-        {
-            var flag = metric.Failed ? "\u274c" : "\u2705";
-            lines.Add($"    {flag} {name}: {metric.Value:F2} ({metric.Rating}) \u2014 {metric.Reason}");
+            var pass = stats.FailedFraction > 0 ? "\u274c" : "\u2705";
+            if (g.SampleCount == 1)
+            {
+                lines.Add($"  {pass} {metricName}: {stats.Mean:F2}");
+            }
+            else
+            {
+                var line = $"  {pass} {metricName}: {stats.Mean:F2} \u00b1 {stats.StdDev:F2}  [{stats.Min:F2}\u2013{stats.Max:F2}]";
+                if (stats.FailedFraction > 0)
+                    line += $"  ({stats.FailedFraction:P0} failed)";
+                lines.Add(line);
+            }
         }
         lines.Add("");
     }
