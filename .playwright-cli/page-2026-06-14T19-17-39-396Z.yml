@@ -1,0 +1,47 @@
+- generic [ref=e4]:
+  - generic [ref=e6]:
+    - heading "AI Evaluation Report" [level=1] [ref=e7]
+    - generic [ref=e8]:
+      - generic [ref=e9]:
+        - img [ref=e11]
+        - textbox "Search / Filter" [ref=e13]:
+          - /placeholder: "Search / Filter "
+        - generic:
+          - button "clear":
+            - img [ref=e14] [cursor=pointer]
+      - button "Download Data as JSON" [ref=e16]:
+        - img [ref=e18]
+      - button "Settings" [ref=e20]:
+        - img [ref=e22]
+  - tree "Default" [ref=e25]:
+    - treeitem "Select All Evaluations [eval-20260614T221502] / qa 0/5 [0.0%]" [expanded] [level=1] [ref=e26] [cursor=pointer]:
+      - generic [ref=e27]:
+        - img [ref=e29]
+        - generic [ref=e32]:
+          - button "Select" [ref=e33]:
+            - img [ref=e35]
+          - generic [ref=e39]:
+            - text: All Evaluations [eval-20260614T221502]
+            - generic [ref=e40]: /
+            - text: qa
+          - generic [ref=e42]: 0/5 [0.0%]
+      - group [ref=e43]:
+        - treeitem "Select moon-distance 0/2 [0.0%] [user] How far is the Moon from Earth? [assistant] Approximately 238,855 miles." [level=2] [ref=e44]:
+          - generic [ref=e45]:
+            - img [ref=e47]
+            - generic [ref=e50]:
+              - button "Select" [ref=e51]:
+                - img [ref=e53]
+              - generic [ref=e57]: moon-distance
+              - generic [ref=e59]: 0/2 [0.0%]
+              - generic [ref=e60]: "[user] How far is the Moon from Earth? [assistant] Approximately 238,855 miles."
+        - treeitem "Select water-boil 0/3 [0.0%] [user] At what temperature does water boil? [assistant] It depends on altitude...." [level=2] [ref=e61]:
+          - generic [ref=e62]:
+            - img [ref=e64]
+            - generic [ref=e67]:
+              - button "Select" [ref=e68]:
+                - img [ref=e70]
+              - generic [ref=e74]: water-boil
+              - generic [ref=e76]: 0/3 [0.0%]
+              - generic [ref=e77]: "[user] At what temperature does water boil? [assistant] It depends on altitude...."
+  - paragraph [ref=e78]: Generated at 2026-06-14T19:15:37.7869073Z by Microsoft.Extensions.AI.Evaluation.Reporting version 10.7.0

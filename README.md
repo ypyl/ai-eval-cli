@@ -16,11 +16,18 @@ Evaluators, caching, and storage are standardized by the tool. Teams provide sce
 
 **Option 1: Native binary** (no .NET runtime required)
 
-Download the native binary for your platform from releases, or build from source:
+Download the native binary for your platform from [GitHub Releases](https://github.com/ypyl/ai-eval-cli/releases). Each release includes:
+
+- `eval-cli` (linux-x64)
+- `eval-cli.exe` (win-x64)
+- `eval-cli` (osx-arm64)
+
+Make the binary executable (`chmod +x eval-cli` on Linux/macOS) and place it on your PATH.
+
+Or build from source:
 
 ```bash
-# Clone and build (requires .NET 10 SDK)
-git clone <repo-url> && cd ai-eval-cli
+git clone https://github.com/ypyl/ai-eval-cli.git && cd ai-eval-cli
 dotnet publish src/AiEvalCli -c Release -r win-x64 -o ./out   # Windows
 dotnet publish src/AiEvalCli -c Release -r linux-x64 -o ./out  # Linux
 dotnet publish src/AiEvalCli -c Release -r osx-arm64 -o ./out  # macOS
@@ -604,6 +611,29 @@ Ensure you're authenticated before running:
 ```bash
 az login
 ```
+
+## Publishing
+
+Releases are fully automated via GitHub Actions using [NuGet Trusted Publishing](https://learn.microsoft.com/en-us/nuget/nuget-org/trusted-publishing) (OIDC-based, no long-lived API keys).
+
+### How to release
+
+```bash
+git tag v1.3.0
+git push --tags
+```
+
+The workflow (`.github/workflows/publish.yml`) builds native binaries for linux-x64, win-x64, and osx-arm64, pushes the dotnet tool package to NuGet.org, and creates a GitHub Release with all platform binaries attached.
+
+### One-time setup
+
+**nuget.org:** Create a Trusted Publishing policy under your account → Trusted Publishing:
+- Repository Owner: `ypyl`
+- Repository: `ai-eval-cli`
+- Workflow File: `publish.yml`
+
+**GitHub:** Add a repository secret at Settings → Secrets and variables → Actions:
+- `NUGET_USERNAME` — your nuget.org profile name (not email)
 
 ## License
 

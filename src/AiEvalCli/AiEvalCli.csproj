@@ -21,7 +21,6 @@
     <!-- Dotnet tool packaging -->
     <PackAsTool>true</PackAsTool>
     <PackageId>eval-cli</PackageId>
-    <Version>1.1.1</Version>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <RepositoryUrl>https://github.com/ypyl/ai-eval-cli.git</RepositoryUrl>

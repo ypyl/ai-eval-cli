@@ -1,0 +1,4 @@
+[     313ms] TypeError: Cannot read properties of undefined (reading 'split')
+    at E4 (http://localhost:8765/report.html:118:1313)
+    at http://localhost:8765/report.html:131:37010
+[     320ms] [ERROR] Failed to load resource: the server responded with a status of 404 (File not found) @ http://localhost:8765/favicon.ico:0
