@@ -76,8 +76,7 @@ var request = new EvalRequest
 };
 
 // Run
-var console = new ProgressConsole();
-var result = await EvalEngine.RunAsync(request, console);
+var result = await EvalEngine.RunAsync(request, ConsoleWriter);
 
 // Always aggregate and persist
 var aggregated = EvalEngine.Aggregate(result);
@@ -204,10 +203,11 @@ static string FormatHuman(AggregatedEvalResult result)
 }
 
 
-file class ProgressConsole : IConsoleWriter
+static void ConsoleWriter(string kind, string? message = null, int completed = 0, int total = 0, string? currentScenario = null)
 {
-    public void WriteLine(string message) => Console.WriteLine(message);
-    public void WriteProgress(int completed, int total, string currentScenario)
+    if (kind == "line")
+        Console.WriteLine(message);
+    else
     {
         var pct = (int)((double)completed / total * 100);
         var bar = new string('#', pct / 5).PadRight(20);

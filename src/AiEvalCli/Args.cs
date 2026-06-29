@@ -49,7 +49,7 @@ internal sealed class Args
                 case "--endpoint":
                     result.Endpoint = RequireValue(arg, next, ref i);
                     break;
-                case "--model" or "-m" or "--deployment" or "-d":
+                case "--model" or "-m":
                     result.Model = RequireValue(arg, next, ref i);
                     break;
                 case "--api-key":
@@ -79,9 +79,7 @@ internal sealed class Args
                 case "--json":
                     result.OutputJson = true;
                     break;
-                case "--output" or "-o":
-                    Console.Error.WriteLine("--output/-o is no longer supported. Use --json for machine-readable output, or omit for the default human-readable view.");
-                    break;
+
                 case "--output-file":
                     result.OutputFile = RequireValue(arg, next, ref i);
                     break;

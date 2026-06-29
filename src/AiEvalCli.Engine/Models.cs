@@ -74,19 +74,6 @@ public class EvalScenario
         return messages;
     }
 
-    /// <summary>
-    /// Resolves the effective reference answers list, merging the deprecated singular
-    /// <see cref="ReferenceAnswer"/> into <see cref="ReferenceAnswers"/> for backwards compatibility.
-    /// </summary>
-    private IReadOnlyList<string> GetEffectiveReferenceAnswers()
-    {
-        if (ReferenceAnswers is { Count: > 0 })
-            return ReferenceAnswers;
-        if (!string.IsNullOrWhiteSpace(ReferenceAnswer))
-            return [ReferenceAnswer];
-        return [];
-    }
-
     internal List<EvaluationContext> GetContext()
     {
         var contexts = new List<EvaluationContext>();
@@ -94,7 +81,10 @@ public class EvalScenario
         if (!string.IsNullOrWhiteSpace(Context))
             contexts.Add(new GroundednessEvaluatorContext(Context));
 
-        var refs = GetEffectiveReferenceAnswers();
+        // ponytail: inlined GetEffectiveReferenceAnswers — single call site, 5 lines
+        var refs = ReferenceAnswers is { Count: > 0 }
+            ? ReferenceAnswers
+            : !string.IsNullOrWhiteSpace(ReferenceAnswer) ? new[] { ReferenceAnswer } : [];
         if (refs.Count > 0)
         {
             contexts.Add(new EquivalenceEvaluatorContext(refs[0]));
@@ -174,10 +164,8 @@ public class AggregatedEvalResult
 }
 
 /// <summary>
-/// Abstracts console output so the engine doesn't depend on System.Console.
+/// Console output delegate so the engine doesn't depend on System.Console.
 /// </summary>
-public interface IConsoleWriter
-{
-    void WriteLine(string message);
-    void WriteProgress(int completed, int total, string currentScenario);
-}
+/// <param name="kind">"line" or "progress"</param>
+/// <param name="message">For "line": the message. For "progress": formatted progress string.</param>
+public delegate void ConsoleWriter(string kind, string? message = null, int completed = 0, int total = 0, string? currentScenario = null);

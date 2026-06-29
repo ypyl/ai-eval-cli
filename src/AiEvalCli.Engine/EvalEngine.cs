@@ -20,16 +20,16 @@ public static class EvalEngine
     /// </summary>
     public static async Task<EvalResult> RunAsync(
         EvalRequest request,
-        IConsoleWriter? console = null,
+        ConsoleWriter? console = null,
         CancellationToken cancellationToken = default)
     {
         var config = BuildReportingConfiguration(request);
         var scenarios = new List<ScenarioSummary>();
         var startedAt = DateTime.UtcNow;
 
-        console?.WriteLine($"Starting evaluation: {request.ExecutionName}");
-        console?.WriteLine($"Evaluators: {string.Join(", ", request.EvaluatorNames)}");
-        console?.WriteLine($"Scenarios: {request.Scenarios.Count}");
+        console?.Invoke("line", $"Starting evaluation: {request.ExecutionName}");
+        console?.Invoke("line", $"Evaluators: {string.Join(", ", request.EvaluatorNames)}");
+        console?.Invoke("line", $"Scenarios: {request.Scenarios.Count}");
 
         var completed = 0;
         var total = request.Scenarios.Count;
@@ -72,7 +72,7 @@ public static class EvalEngine
                 };
 
                 var done = Interlocked.Increment(ref completed);
-                console?.WriteProgress(done, total, scenario.Name);
+                console?.Invoke("progress", completed: done, total: total, currentScenario: scenario.Name);
 
                 return summary;
             }
@@ -84,7 +84,7 @@ public static class EvalEngine
 
         scenarios.AddRange(await Task.WhenAll(tasks));
 
-        console?.WriteLine($"Evaluation complete. {scenarios.Count} scenarios in {(DateTime.UtcNow - startedAt).TotalSeconds:F1}s");
+        console?.Invoke("line", $"Evaluation complete. {scenarios.Count} scenarios in {(DateTime.UtcNow - startedAt).TotalSeconds:F1}s");
 
         return new EvalResult
         {
