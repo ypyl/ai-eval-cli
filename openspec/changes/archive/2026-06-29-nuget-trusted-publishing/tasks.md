@@ -22,7 +22,7 @@
 
 ## 4. Verification
 
-- [ ] 4.1 Push a test tag (e.g., `v1.1.2`) and verify the workflow builds all three platform binaries successfully
-- [ ] 4.2 Verify the NuGet push completes via OIDC token exchange (no API key used)
-- [ ] 4.3 Verify the GitHub Release is created with all three native binary assets attached
-- [ ] 4.4 Verify `dotnet tool install --global eval-cli --version 1.1.2` succeeds from the published package
+- [x] 4.1 Push a test tag (e.g., `v1.1.2`) and verify the workflow builds all three platform binaries successfully
+- [x] 4.2 Verify the NuGet push completes via OIDC token exchange (no API key used)
+- [x] 4.3 Verify the GitHub Release is created with all three native binary assets attached
+- [x] 4.4 Verify `dotnet tool install --global eval-cli --version 1.1.2` succeeds from the published package
