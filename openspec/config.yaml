@@ -1,1 +1,31 @@
 schema: spec-driven
+
+context: |
+  Tech stack: .NET 10 (C#), Microsoft.Extensions.AI.Evaluation, System.Text.Json source generators
+  Distribution: NuGet dotnet tool + native AOT binaries (win-x64, linux-x64, osx-arm64)
+  CLI design: stdin pipe or --input <file>, human-readable stdout by default, --json for machine output
+  Providers: Azure OpenAI (DefaultAzureCredential or API key), OpenAI
+  Testing: xUnit, integration tests in integration/ folder
+  CI/CD: GitHub Actions
+  Architecture: src/AiEvalCli (CLI app) + src/AiEvalCli.Engine (library), published as single binary
+  Constraints: AOT-compatible (no reflection-based JSON), cross-platform (no Windows-only APIs)
+  We value backwards compatibility for CLI flags and JSON schema
+
+rules:
+  proposal:
+    - Include rollback plan
+    - Identify affected NuGet packages, release artifacts, and CLI flags
+    - Note any breaking changes to JSON schema or CLI interface
+  specs:
+    - Use Given/When/Then format
+    - Reference existing spec patterns before inventing new ones
+    - Cover edge cases: empty input, single item, mixed scenarios, error states
+  design:
+    - Confirm AOT compatibility (no reflection, only source-gen JSON)
+    - Confirm cross-platform compatibility (no Windows-only APIs)
+    - Prefer existing patterns in Microsoft.Extensions.AI.Evaluation
+  tasks:
+    - Include unit and integration test steps
+    - Include AOT publish verification step
+    - Include release/publishing steps if applicable
+    - Order tasks by dependency
