@@ -3,6 +3,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.AI.Evaluation;
+using Microsoft.Extensions.AI.Evaluation.NLP;
 using Microsoft.Extensions.AI.Evaluation.Quality;
 using Microsoft.Extensions.AI.Evaluation.Reporting;
 using Microsoft.Extensions.AI.Evaluation.Reporting.Storage;
@@ -197,15 +198,20 @@ public static class EvalEngine
     {
         var evaluators = CreateEvaluators(request.EvaluatorNames);
 
-        return DiskBasedReportingConfiguration.Create(
-            storageRootPath: request.StorageRootPath,
+        var resultStore = new FixedDiskResultStore(request.StorageRootPath);
+        var cacheProvider = request.EnableResponseCaching
+            ? new DiskBasedResponseCacheProvider(request.StorageRootPath, TimeSpan.FromDays(14))
+            : null;
+
+        return new ReportingConfiguration(
             evaluators: evaluators,
+            resultStore: resultStore,
             chatConfiguration: request.ChatConfiguration,
-            enableResponseCaching: request.EnableResponseCaching,
+            responseCacheProvider: cacheProvider,
             executionName: request.ExecutionName);
     }
 
-    private static IEvaluator[] CreateEvaluators(IReadOnlySet<string> names)
+    internal static IEvaluator[] CreateEvaluators(IReadOnlySet<string> names)
     {
         var evaluators = new List<IEvaluator>();
 
@@ -221,6 +227,16 @@ public static class EvalEngine
             evaluators.Add(new CompletenessEvaluator());
         if (names.Contains("equivalence"))
             evaluators.Add(new EquivalenceEvaluator());
+        if (names.Contains("rtc"))
+            evaluators.Add(new RelevanceTruthAndCompletenessEvaluator());
+        if (names.Contains("retrieval"))
+            evaluators.Add(new RetrievalEvaluator());
+        if (names.Contains("bleu"))
+            evaluators.Add(new BLEUEvaluator());
+        if (names.Contains("gleu"))
+            evaluators.Add(new GLEUEvaluator());
+        if (names.Contains("f1"))
+            evaluators.Add(new F1Evaluator());
 
         return evaluators.ToArray();
     }

@@ -1,0 +1,35 @@
+[
+  {
+    "name": "rag.planets.moons",
+    "systemPrompt": "You are a precise astronomy assistant.",
+    "userQuery": "How many moons does Saturn have?",
+    "response": "Saturn has 146 confirmed moons.",
+    "retrievedContextChunks": [
+      "Saturn has 146 confirmed moons as of 2023.",
+      "Jupiter has 95 known moons.",
+      "Earth has 1 moon.",
+      "Mars has 2 moons."
+    ],
+    "referenceAnswers": ["Saturn has 146 moons, more than any other planet.", "Saturn: 146 confirmed moons."]
+  },
+  {
+    "name": "rag.water.facts",
+    "userQuery": "What are the boiling and freezing points of water?",
+    "response": "Water boils at 100°C and freezes at 0°C at standard pressure.",
+    "retrievedContextChunks": [
+      "Water freezes at 0°C (32°F).",
+      "Water boils at 100°C (212°F) at sea level."
+    ],
+    "referenceAnswers": ["Water freezes at 0°C and boils at 100°C.", "Freezing: 0°C, boiling: 100°C."]
+  },
+  {
+    "name": "nlp.planet.facts",
+    "userQuery": "Which planet has the most moons?",
+    "response": "Saturn has the most moons with 146 confirmed.",
+    "referenceAnswers": [
+      "Saturn has 146 moons, more than any other planet.",
+      "Saturn, with 146 confirmed moons, has the most.",
+      "Saturn leads with 146 moons."
+    ]
+  }
+]

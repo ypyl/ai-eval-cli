@@ -1,5 +1,6 @@
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.AI.Evaluation;
+using Microsoft.Extensions.AI.Evaluation.NLP;
 using Microsoft.Extensions.AI.Evaluation.Quality;
 
 namespace AiEvalCli.Engine;
@@ -54,8 +55,15 @@ public class EvalScenario
     /// <summary>Optional grounding context for groundedness evaluation.</summary>
     public string? Context { get; init; }
 
-    /// <summary>Optional reference answer for equivalence evaluation.</summary>
+    /// <summary>Optional reference answer for equivalence evaluation (deprecated — use ReferenceAnswers).</summary>
     public string? ReferenceAnswer { get; init; }
+
+    /// <summary>Optional reference answers for NLP evaluators (BLEU, GLEU, F1) and Equivalence evaluator.
+    /// Equivalence uses the first element; NLP evaluators use all elements.</summary>
+    public IReadOnlyList<string> ReferenceAnswers { get; init; } = [];
+
+    /// <summary>Optional retrieved context chunks for retrieval evaluator (RAG scenarios).</summary>
+    public IReadOnlyList<string> RetrievedContextChunks { get; init; } = [];
 
     internal List<ChatMessage> GetChatMessages()
     {
@@ -66,13 +74,38 @@ public class EvalScenario
         return messages;
     }
 
+    /// <summary>
+    /// Resolves the effective reference answers list, merging the deprecated singular
+    /// <see cref="ReferenceAnswer"/> into <see cref="ReferenceAnswers"/> for backwards compatibility.
+    /// </summary>
+    private IReadOnlyList<string> GetEffectiveReferenceAnswers()
+    {
+        if (ReferenceAnswers is { Count: > 0 })
+            return ReferenceAnswers;
+        if (!string.IsNullOrWhiteSpace(ReferenceAnswer))
+            return [ReferenceAnswer];
+        return [];
+    }
+
     internal List<EvaluationContext> GetContext()
     {
         var contexts = new List<EvaluationContext>();
+
         if (!string.IsNullOrWhiteSpace(Context))
             contexts.Add(new GroundednessEvaluatorContext(Context));
-        if (!string.IsNullOrWhiteSpace(ReferenceAnswer))
-            contexts.Add(new EquivalenceEvaluatorContext(ReferenceAnswer));
+
+        var refs = GetEffectiveReferenceAnswers();
+        if (refs.Count > 0)
+        {
+            contexts.Add(new EquivalenceEvaluatorContext(refs[0]));
+            contexts.Add(new BLEUEvaluatorContext(refs));
+            contexts.Add(new GLEUEvaluatorContext(refs));
+            contexts.Add(new F1EvaluatorContext(refs[0]));
+        }
+
+        if (RetrievedContextChunks is { Count: > 0 })
+            contexts.Add(new RetrievalEvaluatorContext(RetrievedContextChunks));
+
         return contexts;
     }
 }

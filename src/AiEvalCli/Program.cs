@@ -16,7 +16,7 @@ if (cli.ShowHelp) { PrintHelp(); return 0; }
 
 // Validate evaluators
 var validEvaluators = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
-    { "relevance", "coherence", "fluency", "groundedness", "completeness", "equivalence" };
+    { "relevance", "coherence", "fluency", "groundedness", "completeness", "equivalence", "rtc", "retrieval", "bleu", "gleu", "f1" };
 foreach (var name in cli.Evaluators)
 {
     if (!validEvaluators.Contains(name))
@@ -121,6 +121,7 @@ static void PrintHelp()
 
         Evaluation options:
           --evaluators, -e <list>   Evaluators: relevance,coherence,fluency,groundedness,completeness,equivalence
+                                    rtc [preview], retrieval, bleu [preview], gleu [preview], f1 [preview]
                                     (default: relevance,coherence,groundedness)
           --input, -i <file>        Path to JSON file containing scenarios
           --input-json <json>       JSON string containing scenarios (alternative to --input)
@@ -132,6 +133,21 @@ static void PrintHelp()
           --output-file <file>      Write output to file instead of stdout
           --help, -h                Show this help
 
+        Evaluator descriptions:
+          relevance      How relevant the response is to the query
+          coherence      Logical flow and orderly presentation of ideas
+          fluency        Grammar, vocabulary, readability
+          groundedness   Alignment with provided context (uses 'context' field)
+          completeness   Comprehensiveness and accuracy of the response
+          equivalence    Similarity to a reference answer (uses first 'referenceAnswers' element)
+          rtc [preview]  Relevance, Truth, and Completeness in one call — produces 3 metrics
+          retrieval      RAG retrieval quality — relevance and ranking of 'retrievedContextChunks'
+          bleu [preview] BLEU NLP metric — compares response against 'referenceAnswers'
+          gleu [preview] GLEU NLP metric — compares response against 'referenceAnswers'
+          f1 [preview]   F1 NLP metric — compares response against first 'referenceAnswers' element
+
+        [preview] evaluators use experimental or preview APIs that may change.
+
         Scenario JSON format:
           [
             {
@@ -140,7 +156,9 @@ static void PrintHelp()
               "userQuery": "How far is the Moon from Earth?",
               "response": "The Moon is about 238,855 miles from Earth on average.",
               "context": "The Moon is 225,623 miles at perigee...",
-              "referenceAnswer": "225,623 to 252,088 miles"
+              "referenceAnswer": "225,623 to 252,088 miles",
+              "referenceAnswers": ["225,623-252,088 miles", "About 225k to 252k miles"],
+              "retrievedContextChunks": ["The Moon's orbit is elliptical.", "Perigee: 225,623 miles."]
             }
           ]
 

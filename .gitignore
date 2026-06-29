@@ -22,7 +22,7 @@ Thumbs.db
 
 ## Evaluation runtime data
 eval-results/
-report.html
+report*.html
 
 ## Secrets
 integration/key.txt

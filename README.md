@@ -84,6 +84,7 @@ Provider options:
 
 Evaluation options:
   --evaluators, -e <list>   Evaluators: relevance,coherence,fluency,groundedness,completeness,equivalence
+                            rtc [preview], retrieval, bleu [preview], gleu [preview], f1 [preview]
                             (default: relevance,coherence,groundedness)
   --input, -i <file>        Path to JSON file containing scenarios
   --input-json <json>       JSON string containing scenarios
@@ -118,7 +119,9 @@ Scenarios are provided as a JSON array:
     "userQuery": "How far is the Moon from Earth at its closest point?",
     "response": "The Moon is approximately 225,623 miles from Earth at perigee.",
     "context": "The Moon's orbit is elliptical. At perigee, it is about 225,623 miles from Earth.",
-    "referenceAnswer": "Approximately 225,623 miles at perigee."
+    "referenceAnswer": "Approximately 225,623 miles at perigee.",
+    "referenceAnswers": ["225,623 miles at perigee", "About 225k miles"],
+    "retrievedContextChunks": ["The Moon's orbit is elliptical.", "Perigee: 225,623 miles."]
   }
 ]
 ```
@@ -130,7 +133,9 @@ Scenarios are provided as a JSON array:
 | `response` | Yes | The LLM response to evaluate. |
 | `systemPrompt` | No | System message prepended to the conversation. |
 | `context` | No | Grounding text for the `groundedness` evaluator. |
-| `referenceAnswer` | No | Expected answer for the `equivalence` evaluator. |
+| `referenceAnswer` | No | **Deprecated.** Use `referenceAnswers` instead. Expected answer for the `equivalence` evaluator. |
+| `referenceAnswers` | No | Reference answer(s) for `equivalence` (uses first element) and NLP evaluators (`bleu`, `gleu`, `f1`). |
+| `retrievedContextChunks` | No | RAG context chunks for the `retrieval` evaluator. List of document texts retrieved for the query. |
 
 ## Multi-Run Aggregation
 
@@ -482,16 +487,25 @@ stages:
 
 ## Evaluators
 
-| Evaluator | Flag | Description |
-|---|---|---|
-| `relevance` | `-e relevance` | How relevant the response is to the query |
-| `coherence` | `-e coherence` | Logical flow and orderly presentation |
-| `fluency` | `-e fluency` | Grammar, vocabulary, readability |
-| `groundedness` | `-e groundedness` | Alignment with provided context |
-| `completeness` | `-e completeness` | Comprehensiveness and accuracy |
-| `equivalence` | `-e equivalence` | Similarity to a reference answer |
+### Built-in Evaluators
 
-All evaluators score on a 1–5 scale. Scores are mapped to ratings: `Unacceptable` → `Poor` → `Average` → `Good` → `Exceptional`.
+| Evaluator | Flag | Metric | Description |
+|---|---|---|---|
+| Relevance | `-e relevance` | `Relevance` | How relevant the response is to the query |
+| Coherence | `-e coherence` | `Coherence` | Logical flow and orderly presentation |
+| Fluency | `-e fluency` | `Fluency` | Grammar, vocabulary, readability |
+| Groundedness | `-e groundedness` | `Groundedness` | Alignment with provided context |
+| Completeness | `-e completeness` | `Completeness` | Comprehensiveness and accuracy |
+| Equivalence | `-e equivalence` | `Equivalence` | Similarity to a reference answer |
+| RTC [preview] | `-e rtc` | `Relevance (RTC)`, `Truth (RTC)`, `Completeness (RTC)` | Relevance, truth, and completeness in one LLM call — produces 3 metrics |
+| Retrieval | `-e retrieval` | `Retrieval` | RAG retrieval quality — relevance and ranking of `retrievedContextChunks` |
+| BLEU [preview] | `-e bleu` | `BLEU` | BLEU NLP metric — compares response against `referenceAnswers` (0.0–1.0 scale) |
+| GLEU [preview] | `-e gleu` | `GLEU` | GLEU NLP metric — compares response against `referenceAnswers` (0.0–1.0 scale) |
+| F1 [preview] | `-e f1` | `F1` | F1 NLP metric — compares response against first `referenceAnswers` element (0.0–1.0 scale) |
+
+> **[preview]** evaluators use experimental or preview APIs that may change between library versions.
+
+Quality evaluators (Relevance through RTC) score on a 1–5 scale. NLP evaluators (BLEU, GLEU, F1) score on a 0.0–1.0 scale. Scores are mapped to ratings: `Unacceptable` → `Poor` → `Average` → `Good` → `Exceptional` (quality) or pass/fail at 0.5 (NLP).
 
 ## Caching
 
